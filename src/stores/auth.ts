@@ -49,7 +49,14 @@ export const useAuthStore = defineStore('auth', {
 
                 return true;
             } catch (err: any) {
-                this.error = err.response?.data?.message || 'Erro ao cadastrar';
+                const data = err.response?.data;
+                if (data?.errors) {
+                    const errors: Record<string, string[]> = data.errors;
+                    const firstKey = Object.keys(errors)[0];
+                    this.error = (firstKey && errors[firstKey] ? errors[firstKey][0] : 'Erro ao cadastrar') ?? null;
+                } else {
+                    this.error = data?.message || 'Erro ao cadastrar';
+                }
                 return false;
             } finally {
                 this.loading = false;

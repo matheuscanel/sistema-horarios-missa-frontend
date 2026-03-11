@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '@/services/api';
 
 const igrejas = ref<any[]>([]);
 const bairros = ref<string[]>([]);
 const loading = ref(true);
+const busca = ref('');
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const filters = ref({
   bairro: '',
   dia_semana: ''
@@ -19,6 +21,7 @@ const fetchIgrejas = async () => {
   loading.value = true;
   try {
     const params = new URLSearchParams();
+    if (busca.value.trim()) params.set('busca', busca.value.trim());
     if (filters.value.bairro) params.set('bairro', filters.value.bairro);
     if (filters.value.dia_semana) params.set('dia_semana', filters.value.dia_semana);
 
@@ -34,19 +37,15 @@ const fetchIgrejas = async () => {
   }
 };
 
+const onBuscaInput = () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    fetchIgrejas();
+  }, 400);
+};
+
 onMounted(fetchIgrejas);
 
-const igrejasPorParoquia = computed(() => {
-  const grupos: Record<string, any[]> = {};
-  for (const ig of igrejas.value) {
-    const nome = ig.paroquia?.nome || 'Sem paróquia';
-    if (!grupos[nome]) grupos[nome] = [];
-    grupos[nome].push(ig);
-  }
-  return Object.keys(grupos)
-    .sort((a, b) => a.localeCompare(b))
-    .map(nome => ({ nome, igrejas: grupos[nome] }));
-});
 </script>
 
 <template>
@@ -55,28 +54,41 @@ const igrejasPorParoquia = computed(() => {
     <section class="hero">
       <div class="container hero-content">
         <h1>Encontre horários de missas em Pernambuco</h1>
-        <p>Busque por bairro ou dia da semana e planeje sua ida à missa.</p>
+        <p>Busque por nome, paróquia, bairro ou dia da semana.</p>
         
         <div class="search-box card">
-          <div class="filter-group">
-            <label>Bairro</label>
-            <select v-model="filters.bairro" @change="fetchIgrejas">
-              <option value="">Todos os bairros</option>
-              <option v-for="b in bairros" :key="b" :value="b">{{ b }}</option>
-            </select>
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input 
+              v-model="busca" 
+              @input="onBuscaInput" 
+              type="text" 
+              placeholder="Buscar igreja, paróquia ou bairro..." 
+              class="search-input"
+            />
           </div>
           
-          <div class="filter-group">
-            <label>Dia da Semana</label>
-            <select v-model="filters.dia_semana" @change="fetchIgrejas">
-              <option value="">Todos os dias</option>
-              <option v-for="d in diasSemana" :key="d" :value="d">{{ d.charAt(0).toUpperCase() + d.slice(1) }}</option>
-            </select>
+          <div class="filters-row">
+            <div class="filter-group">
+              <label>Bairro</label>
+              <select v-model="filters.bairro" @change="fetchIgrejas">
+                <option value="">Todos os bairros</option>
+                <option v-for="b in bairros" :key="b" :value="b">{{ b }}</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label>Dia da Semana</label>
+              <select v-model="filters.dia_semana" @change="fetchIgrejas">
+                <option value="">Todos os dias</option>
+                <option v-for="d in diasSemana" :key="d" :value="d">{{ d.charAt(0).toUpperCase() + d.slice(1) }}</option>
+              </select>
+            </div>
+            
+            <button @click="fetchIgrejas" class="btn btn-primary">
+              Buscar
+            </button>
           </div>
-          
-          <button @click="fetchIgrejas" class="btn btn-primary">
-            Buscar
-          </button>
         </div>
       </div>
     </section>
@@ -93,27 +105,21 @@ const igrejasPorParoquia = computed(() => {
         <p>Tente ajustar os filtros ou busque em outro bairro.</p>
       </div>
 
-      <div v-else>
-        <div v-for="grupo in igrejasPorParoquia" :key="grupo.nome" class="paroquia-group">
-          <div class="paroquia-divider">
-            <span class="paroquia-label">{{ grupo.nome }}</span>
+      <div v-else class="igrejas-grid">
+        <div v-for="igreja in igrejas" :key="igreja.id" class="igreja-card card">
+          <div class="igreja-header">
+            <h3>{{ igreja.nome }}</h3>
+            <span class="badge badge-success">{{ igreja.bairro }}</span>
           </div>
-          <div class="igrejas-grid">
-            <div v-for="igreja in grupo.igrejas" :key="igreja.id" class="igreja-card card">
-              <div class="igreja-header">
-                <h3>{{ igreja.nome }}</h3>
-                <span class="badge badge-success">{{ igreja.bairro }}</span>
-              </div>
-              <p class="endereco">📍 {{ igreja.endereco }}</p>
-              
-              <div class="horarios-section">
-                <h4>Horários de Missa</h4>
-                <div class="horarios-list">
-                  <div v-for="h in igreja.horario_missas" :key="h.id" class="horario-item">
-                    <span class="dia">{{ h.dia_semana.substring(0, 3) }}</span>
-                    <span class="hora">{{ h.horario.substring(0, 5) }}</span>
-                  </div>
-                </div>
+          <p class="endereco">📍 {{ igreja.endereco }}</p>
+          <p v-if="igreja.paroquia" class="meta-item paroquia-info"><span class="meta-label">Paróquia:</span> {{ igreja.paroquia.nome }}</p>
+          
+          <div class="horarios-section">
+            <h4>Horários de Missa</h4>
+            <div class="horarios-list">
+              <div v-for="h in igreja.horario_missas" :key="h.id" class="horario-item">
+                <span class="dia">{{ h.dia_semana.substring(0, 3) }}</span>
+                <span class="hora">{{ h.horario.substring(0, 5) }}</span>
               </div>
             </div>
           </div>
@@ -138,43 +144,58 @@ const igrejasPorParoquia = computed(() => {
 
 .search-box {
   display: flex;
+  flex-direction: column;
   gap: 1.5rem;
-  align-items: flex-end;
   background: white;
   padding: 2rem;
   max-width: 900px;
 }
 
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.9rem 1rem 0.9rem 2.75rem;
+  font-size: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--bg);
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.filters-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-end;
+}
+
 .filter-group { flex: 1; }
 .filter-group label { color: var(--text-main); }
 
-.paroquia-group {
-  margin-bottom: 2rem;
-}
 
-.paroquia-divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.paroquia-divider::before,
-.paroquia-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.paroquia-label {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--primary);
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
 
 .igrejas-grid {
   display: grid;
@@ -198,8 +219,24 @@ const igrejasPorParoquia = computed(() => {
   margin-bottom: 1rem;
 }
 
-.endereco { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem; }
-.paroquia-name { font-weight: 600; font-size: 0.75rem; color: var(--primary); margin-bottom: 1.5rem; }
+.endereco { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem; }
+
+.meta-item {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.meta-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.7rem;
+}
+
+.paroquia-info {
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
 
 .horarios-section h4 {
   font-size: 0.875rem;

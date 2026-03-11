@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
 
 const auth = useAuthStore();
+const toast = useToastStore();
 const paroquia = ref<any>(null);
 const igrejas = ref<any[]>([]);
 const loading = ref(true);
@@ -33,13 +35,15 @@ const criarIgreja = async () => {
     await api.post('/paroquia/igrejas', novaIgreja.value);
     novaIgreja.value = { nome: '', bairro: '', endereco: '' };
     showIgrejaForm.value = false;
+    toast.success('Igreja cadastrada com sucesso!');
     fetchData();
-  } catch (err) { alert('Erro ao criar igreja'); }
+  } catch (err) { toast.error('Erro ao criar igreja. Verifique os dados e tente novamente.'); }
 };
 
 const deletarIgreja = async (id: number) => {
   if (confirm('Tem certeza? Isso apagará todos os horários desta igreja.')) {
     await api.delete(`/paroquia/igrejas/${id}`);
+    toast.success('Igreja removida com sucesso.');
     fetchData();
   }
 };
@@ -48,12 +52,14 @@ const adicionarHorario = async (igrejaId: number) => {
   try {
     await api.post(`/paroquia/igrejas/${igrejaId}/horarios`, novoHorario.value);
     showHorarioForm.value.igrejaId = null;
+    toast.success('Horário adicionado!');
     fetchData();
-  } catch (err) { alert('Erro ao adicionar horário'); }
+  } catch (err) { toast.error('Erro ao adicionar horário.'); }
 };
 
 const deletarHorario = async (id: number) => {
   await api.delete(`/paroquia/horarios/${id}`);
+  toast.info('Horário removido.');
   fetchData();
 };
 

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import api from '@/services/api';
+import { useToastStore } from '@/stores/toast';
 
+const toast = useToastStore();
 const pendentes = ref<any[]>([]);
 const aprovadas = ref<any[]>([]);
 const rejeitadas = ref<any[]>([]);
@@ -23,12 +25,22 @@ const fetchData = async () => {
 
 const aprovar = async (id: number) => {
   await api.patch(`/admin/paroquias/${id}/aprovar`);
+  toast.success('Paróquia aprovada com sucesso!');
   fetchData();
 };
 
 const rejeitar = async (id: number) => {
   if (confirm('Rejeitar esta paróquia?')) {
     await api.patch(`/admin/paroquias/${id}/rejeitar`);
+    toast.warning('Paróquia rejeitada.');
+    fetchData();
+  }
+};
+
+const remover = async (id: number) => {
+  if (confirm('Tem certeza que deseja REMOVER esta paróquia? Todas as igrejas e horários associados serão excluídos permanentemente.')) {
+    await api.delete(`/admin/paroquias/${id}`);
+    toast.success('Paróquia removida com sucesso.');
     fetchData();
   }
 };
@@ -84,6 +96,9 @@ onMounted(fetchData);
               <h3>{{ p.nome }}</h3>
               <span class="badge badge-success">Aprovada</span>
             </div>
+            <div class="actions">
+              <button @click="remover(p.id)" class="btn btn-outline btn-sm btn-remove">Remover</button>
+            </div>
           </div>
 
           <div v-for="p in rejeitadas" :key="p.id" class="item card small">
@@ -91,7 +106,10 @@ onMounted(fetchData);
               <h3>{{ p.nome }}</h3>
               <span class="badge badge-danger">Rejeitada</span>
             </div>
-            <button @click="aprovar(p.id)" class="btn btn-outline btn-sm">Reconsiderar</button>
+            <div class="actions">
+              <button @click="remover(p.id)" class="btn btn-outline btn-sm btn-remove">Remover</button>
+              <button @click="aprovar(p.id)" class="btn btn-outline btn-sm">Reconsiderar</button>
+            </div>
           </div>
         </div>
       </section>
@@ -115,6 +133,9 @@ onMounted(fetchData);
 .actions { display: flex; gap: 0.75rem; }
 
 .empty { text-align: center; padding: 2rem; color: var(--text-muted); border-style: dashed; }
+
+.btn-remove { color: #dc2626; border-color: #dc2626; }
+.btn-remove:hover { background: #dc2626; color: white; }
 
 @media (max-width: 992px) {
   .admin-grid { grid-template-columns: 1fr; }

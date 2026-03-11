@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import ToastContainer from '@/components/ToastContainer.vue'
 
 const auth = useAuthStore()
 </script>
@@ -43,6 +44,8 @@ const auth = useAuthStore()
       <p>&copy; 2026 MissasPE - Encontre horários de missas perto de você.</p>
     </div>
   </footer>
+
+  <ToastContainer />
 </template>
 
 <style scoped>
