@@ -40,7 +40,7 @@ const auth = useAuthStore()
 
   <footer class="main-footer">
     <div class="container">
-      <p>&copy; 2024 MissasPE - Encontre horários de missas perto de você.</p>
+      <p>&copy; 2026 MissasPE - Encontre horários de missas perto de você.</p>
     </div>
   </footer>
 </template>

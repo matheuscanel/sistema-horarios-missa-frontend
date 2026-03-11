@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from '@/services/api';
 
 const igrejas = ref<any[]>([]);
@@ -16,7 +16,7 @@ const diasSemana = [
 ];
 
 const fetchIgrejas = async () => {
-  loading.ref = true;
+  loading.value = true;
   try {
     const params = new URLSearchParams();
     if (filters.value.bairro) params.set('bairro', filters.value.bairro);
@@ -35,6 +35,18 @@ const fetchIgrejas = async () => {
 };
 
 onMounted(fetchIgrejas);
+
+const igrejasPorParoquia = computed(() => {
+  const grupos: Record<string, any[]> = {};
+  for (const ig of igrejas.value) {
+    const nome = ig.paroquia?.nome || 'Sem paróquia';
+    if (!grupos[nome]) grupos[nome] = [];
+    grupos[nome].push(ig);
+  }
+  return Object.keys(grupos)
+    .sort((a, b) => a.localeCompare(b))
+    .map(nome => ({ nome, igrejas: grupos[nome] }));
+});
 </script>
 
 <template>
@@ -43,7 +55,7 @@ onMounted(fetchIgrejas);
     <section class="hero">
       <div class="container hero-content">
         <h1>Encontre horários de missas em Pernambuco</h1>
-        <p>Busque por bairro ou dia da semana e planeje sua ida à paróquia.</p>
+        <p>Busque por bairro ou dia da semana e planeje sua ida à missa.</p>
         
         <div class="search-box card">
           <div class="filter-group">
@@ -81,21 +93,27 @@ onMounted(fetchIgrejas);
         <p>Tente ajustar os filtros ou busque em outro bairro.</p>
       </div>
 
-      <div v-else class="igrejas-grid">
-        <div v-for="igreja in igrejas" :key="igreja.id" class="igreja-card card">
-          <div class="igreja-header">
-            <h3>{{ igreja.nome }}</h3>
-            <span class="badge badge-success">{{ igreja.bairro }}</span>
+      <div v-else>
+        <div v-for="grupo in igrejasPorParoquia" :key="grupo.nome" class="paroquia-group">
+          <div class="paroquia-divider">
+            <span class="paroquia-label">{{ grupo.nome }}</span>
           </div>
-          <p class="endereco">📍 {{ igreja.endereco }}</p>
-          <p class="paroquia-name">Paróquia: {{ igreja.paroquia.nome }}</p>
-          
-          <div class="horarios-section">
-            <h4>Próximas Missas</h4>
-            <div class="horarios-list">
-              <div v-for="h in igreja.horario_missas" :key="h.id" class="horario-item">
-                <span class="dia">{{ h.dia_semana }}</span>
-                <span class="hora">{{ h.horario.substring(0, 5) }}</span>
+          <div class="igrejas-grid">
+            <div v-for="igreja in grupo.igrejas" :key="igreja.id" class="igreja-card card">
+              <div class="igreja-header">
+                <h3>{{ igreja.nome }}</h3>
+                <span class="badge badge-success">{{ igreja.bairro }}</span>
+              </div>
+              <p class="endereco">📍 {{ igreja.endereco }}</p>
+              
+              <div class="horarios-section">
+                <h4>Horários de Missa</h4>
+                <div class="horarios-list">
+                  <div v-for="h in igreja.horario_missas" :key="h.id" class="horario-item">
+                    <span class="dia">{{ h.dia_semana.substring(0, 3) }}</span>
+                    <span class="hora">{{ h.horario.substring(0, 5) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -130,11 +148,39 @@ onMounted(fetchIgrejas);
 .filter-group { flex: 1; }
 .filter-group label { color: var(--text-main); }
 
+.paroquia-group {
+  margin-bottom: 2rem;
+}
+
+.paroquia-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.paroquia-divider::before,
+.paroquia-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.paroquia-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .igrejas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 2rem;
-  margin-bottom: 4rem;
+  margin-bottom: 1rem;
 }
 
 .igreja-card {
@@ -168,17 +214,25 @@ onMounted(fetchIgrejas);
 .horarios-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 
 .horario-item {
-  background: var(--background);
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), #818cf8);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 80px;
+  min-width: 70px;
+  width: 70px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.horario-item .dia { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-.horario-item .hora { font-size: 1rem; font-weight: 800; color: var(--text-main); }
+.horario-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.horario-item .dia { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85; }
+.horario-item .hora { font-size: 1.1rem; font-weight: 800; }
 
 .loading-state, .empty-state {
   text-align: center;

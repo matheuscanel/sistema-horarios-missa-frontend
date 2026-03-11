@@ -126,7 +126,7 @@ onMounted(fetchData);
           <div class="horarios-manager">
             <div class="h-header">
               <h3>Horários de Missa</h3>
-              <button @click="showHorarioForm.igrejaId = igreja.id" class="btn btn-outline btn-sm">+ Adicionar</button>
+              <button @click="showHorarioForm.igrejaId = igreja.id" class="btn btn-primary btn-sm">+ Adicionar Horário</button>
             </div>
 
             <!-- Add Horario Form Inline -->
@@ -141,8 +141,9 @@ onMounted(fetchData);
 
             <div class="horarios-grid">
               <div v-for="h in igreja.horario_missas" :key="h.id" class="h-chip">
-                <span><strong>{{ h.dia_semana.substring(0,3) }}</strong> {{ h.horario.substring(0,5) }}</span>
                 <button @click="deletarHorario(h.id)" class="delete-h">×</button>
+                <span class="h-dia">{{ h.dia_semana.substring(0,3) }}</span>
+                <span class="h-hora">{{ h.horario.substring(0,5) }}</span>
               </div>
             </div>
           </div>
@@ -176,18 +177,58 @@ onMounted(fetchData);
 .horarios-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .h-chip {
-  background: var(--background);
-  padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), #818cf8);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
+  min-width: 70px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.h-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.h-dia {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+.h-hora {
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
 .delete-h {
-  border: none; background: none; color: var(--danger); font-size: 1.25rem; cursor: pointer;
-  line-height: 1; padding: 0 0.25rem;
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--danger);
+  color: white;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+
+.h-chip:hover .delete-h {
+  opacity: 1;
 }
 
 .horario-inline-form {
