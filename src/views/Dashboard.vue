@@ -49,12 +49,29 @@ const deletarIgreja = async (id: number) => {
 };
 
 const adicionarHorario = async (igrejaId: number) => {
+  // Validação no Frontend: verifica se já existe na lista local
+  const igreja = igrejas.value.find(i => i.id === igrejaId);
+  if (igreja) {
+    const duplicado = igreja.horario_missas.some((h: any) => 
+      h.dia_semana === novoHorario.value.dia_semana && 
+      h.horario.substring(0, 5) === novoHorario.value.horario
+    );
+
+    if (duplicado) {
+      toast.error('Este horário já está cadastrado para esta igreja.');
+      return;
+    }
+  }
+
   try {
     await api.post(`/paroquia/igrejas/${igrejaId}/horarios`, novoHorario.value);
     showHorarioForm.value.igrejaId = null;
     toast.success('Horário adicionado!');
     fetchData();
-  } catch (err) { toast.error('Erro ao adicionar horário.'); }
+  } catch (err: any) { 
+    const message = err.response?.data?.message || 'Erro ao adicionar horário.';
+    toast.error(message); 
+  }
 };
 
 const deletarHorario = async (id: number) => {

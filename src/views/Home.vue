@@ -84,10 +84,6 @@ onMounted(fetchIgrejas);
                 <option v-for="d in diasSemana" :key="d" :value="d">{{ d.charAt(0).toUpperCase() + d.slice(1) }}</option>
               </select>
             </div>
-            
-            <button @click="fetchIgrejas" class="btn btn-primary">
-              Buscar
-            </button>
           </div>
         </div>
       </div>
@@ -131,8 +127,9 @@ onMounted(fetchIgrejas);
 
 <style scoped>
 .hero {
-  background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)),
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%),
               url('/church_header_background.png') center/cover no-repeat;
+  background-blend-mode: overlay;
   padding: 6rem 0;
   color: white;
   margin-top: -2rem;
