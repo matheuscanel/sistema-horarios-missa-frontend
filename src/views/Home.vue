@@ -107,7 +107,7 @@ onMounted(fetchIgrejas);
             <h3>{{ igreja.nome }}</h3>
             <span class="badge badge-success">{{ igreja.bairro }}</span>
           </div>
-          <p class="endereco">📍 {{ igreja.endereco }}</p>
+          <p class="endereco">📍 <span>{{ igreja.endereco }}</span></p>
           <p v-if="igreja.paroquia" class="meta-item paroquia-info"><span class="meta-label">Paróquia:</span> {{ igreja.paroquia.nome }}</p>
           
           <div class="horarios-section">
@@ -213,10 +213,27 @@ onMounted(fetchIgrejas);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+  min-height: 3.5rem; /* Ensures consistent alignment for 1-2 line titles */
 }
 
-.endereco { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem; }
+.igreja-header h3 {
+  margin: 0;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.endereco { 
+  color: var(--text-muted); 
+  font-size: 0.875rem; 
+  margin-bottom: 0.5rem; 
+}
+
+.endereco span {
+  text-decoration: underline; 
+  text-underline-offset: 2px;
+}
 
 .meta-item {
   font-size: 0.8rem;
@@ -233,6 +250,7 @@ onMounted(fetchIgrejas);
 .paroquia-info {
   color: var(--text-muted);
   margin-bottom: 1.25rem;
+  min-height: 1rem; /* Keeps spacing even if parish info is missing/shorter */
 }
 
 .horarios-section h4 {
@@ -245,18 +263,21 @@ onMounted(fetchIgrejas);
   padding-bottom: 0.5rem;
 }
 
-.horarios-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.horarios-list { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 0.5rem; 
+}
 
 .horario-item {
   background: linear-gradient(135deg, var(--primary), #818cf8);
   color: white;
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 0.25rem;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 70px;
-  width: 70px;
+  width: 100%;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 

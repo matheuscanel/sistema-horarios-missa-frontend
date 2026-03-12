@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
@@ -16,6 +16,28 @@ const novaIgreja = ref({ nome: '', bairro: '', endereco: '' });
 
 const showHorarioForm = ref<{igrejaId: number | null}>({ igrejaId: null });
 const novoHorario = ref({ dia_semana: 'domingo', horario: '08:00' });
+
+const horas = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+const minutos = ['00', '15', '30', '45'];
+const horaSelecionada = ref('08');
+const minutoSelecionado = ref('00');
+
+const openHourDropdown = ref(false);
+const openMinDropdown = ref(false);
+
+const selectHora = (h: string) => {
+  horaSelecionada.value = h;
+  openHourDropdown.value = false;
+};
+
+const selectMinuto = (m: string) => {
+  minutoSelecionado.value = m;
+  openMinDropdown.value = false;
+};
+
+watch([horaSelecionada, minutoSelecionado], () => {
+  novoHorario.value.horario = `${horaSelecionada.value}:${minutoSelecionado.value}`;
+}, { immediate: true });
 
 const fetchData = async () => {
   loading.value = true;
@@ -154,10 +176,36 @@ onMounted(fetchData);
 
             <!-- Add Horario Form Inline -->
             <div v-if="showHorarioForm.igrejaId === igreja.id" class="horario-inline-form">
-                <select v-model="novoHorario.dia_semana">
+                <select v-model="novoHorario.dia_semana" class="select-dia">
                     <option v-for="d in ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado']" :key="d" :value="d">{{d}}</option>
                 </select>
-                <input v-model="novoHorario.horario" type="time" />
+                
+                <div class="time-picker-custom">
+                  <div class="custom-dropdown">
+                    <button type="button" class="dropdown-trigger" @click="openHourDropdown = !openHourDropdown; openMinDropdown = false">
+                      {{ horaSelecionada }}h
+                    </button>
+                    <div v-if="openHourDropdown" class="dropdown-menu">
+                      <div v-for="h in horas" :key="h" class="dropdown-item" :class="{active: h === horaSelecionada}" @click="selectHora(h)">
+                        {{ h }}h
+                      </div>
+                    </div>
+                  </div>
+
+                  <span>:</span>
+
+                  <div class="custom-dropdown">
+                    <button type="button" class="dropdown-trigger" @click="openMinDropdown = !openMinDropdown; openHourDropdown = false">
+                      {{ minutoSelecionado }}
+                    </button>
+                    <div v-if="openMinDropdown" class="dropdown-menu">
+                      <div v-for="m in minutos" :key="m" class="dropdown-item" :class="{active: m === minutoSelecionado}" @click="selectMinuto(m)">
+                        {{ m }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <button @click="adicionarHorario(igreja.id)" class="btn btn-primary btn-sm">OK</button>
                 <button @click="showHorarioForm.igrejaId = null" class="btn btn-outline btn-sm">X</button>
             </div>
@@ -255,8 +303,69 @@ onMounted(fetchData);
 }
 
 .horario-inline-form {
-    display: flex; gap: 0.5rem; margin-bottom: 1rem; background: white; padding: 0.5rem; border-radius: 8px;
-    box-shadow: var(--shadow);
+    display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+    margin-bottom: 1rem; background: #f8fafc; padding: 0.75rem; border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.select-dia { flex: 1; min-width: 120px; }
+
+.time-picker-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.custom-dropdown {
+    position: relative;
+}
+
+.dropdown-trigger {
+    background: white;
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    min-width: 60px;
+    font-family: inherit;
+    color: var(--text-main);
+}
+
+.dropdown-trigger:hover {
+    background: var(--background);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    min-width: 70px;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.1s;
+    text-align: center;
+}
+
+.dropdown-item:hover {
+    background: #f1f5f9;
+}
+
+.dropdown-item.active {
+    background: var(--primary);
+    color: white;
 }
 
 .mb-4 { margin-bottom: 1.5rem; }
