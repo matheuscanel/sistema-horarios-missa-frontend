@@ -1,4 +1,4 @@
-# TicketPE - Frontend
+# MissasPE - Frontend
 
 Interface web em Vue 3 para o Sistema de Missas.
 
