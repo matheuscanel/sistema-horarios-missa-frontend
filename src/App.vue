@@ -12,6 +12,7 @@ const auth = useAuthStore()
       <RouterLink to="/" class="logo">
         <span class="icon">⛪</span>
         <span class="text">MissasPE</span>
+        <span class="badge-oficial">Oficial</span>
       </RouterLink>
 
       <nav class="nav-links">
@@ -77,6 +78,18 @@ const auth = useAuthStore()
   font-weight: 800;
   color: var(--primary);
   letter-spacing: -0.025em;
+}
+
+.badge-oficial {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 0.5rem;
 }
 
 .nav-links {
